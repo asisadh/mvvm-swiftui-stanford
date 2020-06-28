@@ -23,32 +23,58 @@ struct EmojiMemoryGameView: View {
 
 struct CardView: View{
     var card: MemoryGame<String>.Card
+    
     var body: some View{
         GeometryReader { geometry in
-            ZStack {
-                if self.card.isFaceUp{
-                    RoundedRectangle(cornerRadius: self.cornerRadius)
-                        .fill(Color.white)
-                    RoundedRectangle(cornerRadius: self.cornerRadius)
-                        .stroke(lineWidth: self.strokeLine)
-                    Text(self.card.content)
-                }else{
-                    if !self.card.isMatch{
-                       RoundedRectangle(cornerRadius: self.cornerRadius).fill()
-                    }
-                }
-            }
-            .font(Font.system(size: min(geometry.size.width, geometry.size.height) * self.fontMultiplier))
+            self.body(for: geometry.size)
         }
     }
     
-    let cornerRadius: CGFloat = 10.0
-    let strokeLine: CGFloat = 3.0
-    let fontMultiplier: CGFloat = 0.75
+    @ViewBuilder
+    private func body(for size: CGSize) -> some View{
+        if card.isFaceUp || !card.isMatch{
+        ZStack {
+            Pie()
+                .padding(5)
+                .opacity(0.4)
+            Text(card.content)
+                .font(Font.system(size: min(size.width, size.height) * 0.7))
+            }.cardify(isFaceUp: card.isFaceUp)
+        }
+    }
+}
+
+struct Cardify: ViewModifier {
+    
+    var isFaceUp: Bool
+    var cornerRadius: CGFloat{ return 10.0 }
+    var strokeLine: CGFloat{ return 3.0 }
+    
+    func body(content: Content) -> some View {
+        ZStack {
+            if isFaceUp{
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(Color.white)
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(lineWidth: self.strokeLine)
+                content
+            }else{
+                RoundedRectangle(cornerRadius: cornerRadius).fill()
+            }
+        }
+    }
+}
+
+extension View{
+    func cardify( isFaceUp: Bool) -> some View{
+        self.modifier(Cardify(isFaceUp: isFaceUp))
+    }
 }
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        EmojiMemoryGameView(viewModel: EmojiMemoryGame())
+        let viewModel = EmojiMemoryGame()
+        viewModel.choose(card: viewModel.cards[0])
+        return EmojiMemoryGameView(viewModel: viewModel)
     }
 }
